@@ -16,12 +16,13 @@ var _ TracableError = (*allocError)(nil)
 // errorString is a trivial implementation of error.
 type allocError struct {
 	s     string
+	root  error
 	frame *errors.Frame
 	info  []any
 }
 
 func New(str string) TracableError {
-	return &allocError{s: str, frame: nil, info: nil}
+	return &allocError{s: str, root: nil, frame: nil, info: nil}
 }
 
 // New returns an error that formats as the given text.
@@ -30,14 +31,10 @@ func New(str string) TracableError {
 // implements Formatter to show this information when printed with details.
 func NewTraced(text string) error {
 	if !errors.Trace() {
-		return &allocError{text, nil, nil}
+		return &allocError{text, nil, nil, nil}
 	}
 	ofs := errors.Caller(1)
-	return &allocError{text, &ofs, nil}
-}
-
-func NewDelay(text string) *allocError {
-	return &allocError{text, nil, nil}
+	return &allocError{text, nil, &ofs, nil}
 }
 
 func (e *allocError) SetFrame(callerOffset int) {
@@ -68,13 +65,19 @@ func (e *allocError) Frame() errors.Frame {
 }
 
 func (e *allocError) Root() error {
-	return nil
+	return e.root
 }
 
 func (e *allocError) Trace(info ...any) error {
 	e.SetFrame(2)
 	if len(info) != 0 {
 		e.info = info
+		for _, i := range info {
+			if f, ok := i.(error); ok {
+				e.root = f
+				break
+			}
+		}
 	}
 	return e
 }
