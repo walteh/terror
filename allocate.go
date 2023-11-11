@@ -8,7 +8,7 @@ import (
 
 type TracableError interface {
 	error
-	Trace() error
+	Trace(...any) error
 }
 
 var _ TracableError = (*allocError)(nil)
@@ -17,10 +17,11 @@ var _ TracableError = (*allocError)(nil)
 type allocError struct {
 	s     string
 	frame *errors.Frame
+	info  []any
 }
 
 func New(str string) TracableError {
-	return &allocError{s: str, frame: nil}
+	return &allocError{s: str, frame: nil, info: nil}
 }
 
 // New returns an error that formats as the given text.
@@ -29,14 +30,14 @@ func New(str string) TracableError {
 // implements Formatter to show this information when printed with details.
 func NewTraced(text string) error {
 	if !errors.Trace() {
-		return &allocError{text, nil}
+		return &allocError{text, nil, nil}
 	}
 	ofs := errors.Caller(1)
-	return &allocError{text, &ofs}
+	return &allocError{text, &ofs, nil}
 }
 
 func NewDelay(text string) *allocError {
-	return &allocError{text, nil}
+	return &allocError{text, nil, nil}
 }
 
 func (e *allocError) SetFrame(callerOffset int) {
@@ -70,7 +71,10 @@ func (e *allocError) Root() error {
 	return nil
 }
 
-func (e *allocError) Trace() error {
+func (e *allocError) Trace(info ...any) error {
 	e.SetFrame(2)
+	if len(info) != 0 {
+		e.info = info
+	}
 	return e
 }
