@@ -38,6 +38,10 @@ func (e *wrapError) Frame() errors.Frame {
 	return e.frame
 }
 
+func (e *wrapError) Info() []any {
+	return []any{e.msg}
+}
+
 func (e *wrapError) Error() string {
 	return fmt.Sprint(e)
 }

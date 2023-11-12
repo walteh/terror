@@ -13,6 +13,8 @@ type TracableError interface {
 
 var _ TracableError = (*allocError)(nil)
 
+var _ Framer = (*allocError)(nil)
+
 // errorString is a trivial implementation of error.
 type allocError struct {
 	s     string
@@ -72,12 +74,16 @@ func (e *allocError) Trace(info ...any) error {
 	e.SetFrame(2)
 	if len(info) != 0 {
 		e.info = info
-		for _, i := range info {
-			if f, ok := i.(error); ok {
+		if len(info) > 1 {
+			if f, ok := info[0].(error); ok {
 				e.root = f
-				break
+				e.info = info[1:]
 			}
 		}
 	}
 	return e
+}
+
+func (e *allocError) Info() []any {
+	return e.info
 }

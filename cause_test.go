@@ -13,7 +13,7 @@ func TestCause(t *testing.T) {
 	erra := terrors.Wrap(err1, "wrap 2")
 	errb := terrors.Wrap(erra, "wrap3")
 
-	_, v, ok := terrors.Cause(errb)
+	_, v, _, ok := terrors.Cause(errb)
 	if !ok {
 		t.Error("unexpected false")
 		return
