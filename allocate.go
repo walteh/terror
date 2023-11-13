@@ -11,6 +11,7 @@ import (
 type TracableError interface {
 	error
 	Trace(...any) error
+	Child(string) TracableError
 }
 
 var _ TracableError = (*allocError)(nil)
@@ -27,6 +28,12 @@ type allocError struct {
 
 func New(str string) TracableError {
 	return &allocError{s: str, root: nil, frame: nil, info: nil}
+}
+
+func (e *allocError) Child(str string) TracableError {
+	parent := *e
+	parent.root = &allocError{s: str, root: nil, frame: parent.frame, info: parent.info}
+	return &parent
 }
 
 // New returns an error that formats as the given text.
