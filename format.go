@@ -25,11 +25,11 @@ func FormatErrorCaller(err error) string {
 	caller := ""
 	var str string
 	// the way go-faster/errors works is that you need to wrap to get the frame, so we do that here in case it has not been wrapped
-	if e, frm, _, ok := Cause(err); ok {
-		_, filestr, linestr := frm.Location()
+	if frm, ok := Cause2(err); ok {
+		_, filestr, linestr := frm.Frame().Location()
 		caller = FormatCaller(filestr, linestr)
 		caller = caller + " - "
-		str = fmt.Sprintf("%+s", e)
+		str = fmt.Sprintf("%+s -> %+s", frm, frm.Root())
 	} else {
 		str = fmt.Sprintf("%+s", err)
 	}

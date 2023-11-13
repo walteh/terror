@@ -26,3 +26,19 @@ func Cause(err error) (oerr error, f errors.Frame, i []any, r bool) {
 		}
 	}
 }
+
+func Cause2(err error) (f Framer, r bool) {
+	for {
+		we, ok := err.(Framer)
+		if !ok {
+			return
+		}
+		r = r || ok
+		f = we
+
+		err = we.Root()
+		if err == nil {
+			return
+		}
+	}
+}
