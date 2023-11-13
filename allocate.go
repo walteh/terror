@@ -3,8 +3,6 @@ package terrors
 import (
 	"fmt"
 
-	stderrors "errors"
-
 	"github.com/go-faster/errors"
 )
 
@@ -24,6 +22,7 @@ type allocError struct {
 	root  error
 	frame *errors.Frame
 	info  []any
+	s2    string
 }
 
 func New(str string) TracableError {
@@ -36,10 +35,10 @@ func New(str string) TracableError {
 // implements Formatter to show this information when printed with details.
 func NewTraced(text string) error {
 	if !errors.Trace() {
-		return &allocError{text, nil, nil, nil}
+		return &allocError{text, nil, nil, nil, ""}
 	}
 	ofs := errors.Caller(1)
-	return &allocError{text, nil, &ofs, nil}
+	return &allocError{text, nil, &ofs, nil, ""}
 }
 
 func (e *allocError) SetFrame(callerOffset int) {
@@ -55,7 +54,11 @@ func (e *allocError) Error() string { return e.s }
 func (e *allocError) Format(s fmt.State, v rune) { errors.FormatError(e, s, v) }
 
 func (e *allocError) FormatError(p errors.Printer) (next error) {
-	p.Print(e.s)
+	if e.s2 != "" {
+		p.Print(fmt.Sprintf("%s -> %s", e.s, e.s2))
+	} else {
+		p.Print(e.s)
+	}
 	if e.frame != nil {
 		e.frame.Format(p)
 	}
@@ -80,18 +83,32 @@ func (e *allocError) Info() []any {
 func (g *allocError) Trace(info ...any) error {
 	e := *g
 	e.SetFrame(2)
-	if len(info) != 0 {
-		e.info = info
-		if len(info) >= 1 {
-			if f, ok := info[0].(error); ok {
-				e.root = f
-				e.info = info[1:]
-			} else if s, ok := info[0].(string); ok {
-				e.root = stderrors.New(s)
-				e.info = info[1:]
-			}
+	for _, v := range info {
+		if f, ok := v.(error); ok {
+			e.root = f
+			break
 		}
 	}
+
+	for _, v := range info {
+		if f, ok := v.(string); ok {
+			e.s2 = f
+			break
+		}
+	}
+
+	// if len(info) != 0 {
+	// 	e.info = info
+	// 	if len(info) >= 1 {
+	// 		if f, ok := info[0].(error); ok {
+	// 			e.root = f
+	// 			e.info = info[1:]
+	// 		} else if s, ok := info[0].(string); ok {
+	// 			e.root = stderrors.New(s)
+	// 			e.info = info[1:]
+	// 		}
+	// 	}
+	// }
 	return &e
 }
 
