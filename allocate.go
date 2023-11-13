@@ -30,12 +30,6 @@ func New(str string) TracableError {
 	return &allocError{s: str, root: nil, frame: nil, info: nil}
 }
 
-func (e *allocError) Child(str string) TracableError {
-	parent := *e
-	parent.root = &allocError{s: str, root: nil, frame: parent.frame, info: parent.info}
-	return &parent
-}
-
 // New returns an error that formats as the given text.
 //
 // The returned error contains a Frame set to the caller's location and
@@ -79,7 +73,12 @@ func (e *allocError) Root() error {
 	return e.root
 }
 
-func (e *allocError) Trace(info ...any) error {
+func (e *allocError) Info() []any {
+	return e.info
+}
+
+func (g *allocError) Trace(info ...any) error {
+	e := *g
 	e.SetFrame(2)
 	if len(info) != 0 {
 		e.info = info
@@ -93,9 +92,11 @@ func (e *allocError) Trace(info ...any) error {
 			}
 		}
 	}
-	return e
+	return &e
 }
 
-func (e *allocError) Info() []any {
-	return e.info
+func (e *allocError) Child(str string) TracableError {
+	parent := *e
+	parent.root = &allocError{s: str, root: nil, frame: parent.frame, info: parent.info}
+	return &parent
 }
