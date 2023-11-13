@@ -74,7 +74,7 @@ func (e *allocError) Trace(info ...any) error {
 	e.SetFrame(2)
 	if len(info) != 0 {
 		e.info = info
-		if len(info) > 1 {
+		if len(info) >= 1 {
 			if f, ok := info[0].(error); ok {
 				e.root = f
 				e.info = info[1:]
