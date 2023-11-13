@@ -3,6 +3,8 @@ package terrors
 import (
 	"fmt"
 
+	stderrors "errors"
+
 	"github.com/go-faster/errors"
 )
 
@@ -77,6 +79,9 @@ func (e *allocError) Trace(info ...any) error {
 		if len(info) >= 1 {
 			if f, ok := info[0].(error); ok {
 				e.root = f
+				e.info = info[1:]
+			} else if s, ok := info[0].(string); ok {
+				e.root = stderrors.New(s)
 				e.info = info[1:]
 			}
 		}
