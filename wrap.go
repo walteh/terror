@@ -60,19 +60,16 @@ func (e *wrapError) Unwrap() error {
 
 // Wrap error with message and caller.
 func Wrap(err error, message string) error {
-	frame := errors.Frame{}
-	if errors.Trace() {
-		frame = errors.Caller(1)
-	}
-	return &wrapError{msg: message, err: err, frame: frame}
+	return WrapWithCaller(err, message, errors.Caller(1))
 }
 
 // Wrapf wraps error with formatted message and caller.
 func Wrapf(err error, format string, a ...interface{}) error {
-	frame := errors.Frame{}
-	if errors.Trace() {
-		frame = errors.Caller(1)
-	}
-	msg := fmt.Sprintf(format, a...)
-	return &wrapError{msg: msg, err: err, frame: frame}
+	return WrapWithCaller(err, fmt.Sprintf(format, a...), errors.Caller(1))
 }
+
+func WrapWithCaller(err error, message string, callerOffset errors.Frame) error {
+	return &wrapError{msg: message, err: err, frame: callerOffset}
+}
+
+var _ Framer = &wrapError{}
