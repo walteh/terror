@@ -1,15 +1,13 @@
 package terrors
 
-import "github.com/go-faster/errors"
-
 type Framer interface {
 	Root() error
-	Frame() errors.Frame
+	Frame() Frame
 	Info() []any
 }
 
 // Cause returns first recorded Frame.
-func Cause(err error) (oerr error, f errors.Frame, i []any, r bool) {
+func Cause(err error) (oerr error, f Frame, i []any, r bool) {
 	for {
 		we, ok := err.(Framer)
 		if !ok {

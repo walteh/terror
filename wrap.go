@@ -10,22 +10,10 @@ import (
 	"github.com/go-faster/errors"
 )
 
-type noWrapper struct {
-	error
-}
-
-func (e noWrapper) FormatError(p errors.Printer) (next error) {
-	if f, ok := e.error.(errors.Formatter); ok {
-		return f.FormatError(p)
-	}
-	p.Print(e.error)
-	return nil
-}
-
 type wrapError struct {
 	msg   string
 	err   error
-	frame errors.Frame
+	frame Frame
 }
 
 var _ Framer = (*wrapError)(nil)
@@ -34,7 +22,7 @@ func (e *wrapError) Root() error {
 	return e.err
 }
 
-func (e *wrapError) Frame() errors.Frame {
+func (e *wrapError) Frame() Frame {
 	return e.frame
 }
 
@@ -49,8 +37,8 @@ func (e *wrapError) Error() string {
 func (e *wrapError) Format(s fmt.State, v rune) { errors.FormatError(e, s, v) }
 
 func (e *wrapError) FormatError(p errors.Printer) (next error) {
-	p.Print(e.msg)
 	e.frame.Format(p)
+	p.Print(e.msg)
 	return e.err
 }
 
@@ -60,15 +48,15 @@ func (e *wrapError) Unwrap() error {
 
 // Wrap error with message and caller.
 func Wrap(err error, message string) error {
-	return WrapWithCaller(err, message, errors.Caller(1))
+	return WrapWithCaller(err, message, Caller(1))
 }
 
 // Wrapf wraps error with formatted message and caller.
 func Wrapf(err error, format string, a ...interface{}) error {
-	return WrapWithCaller(err, fmt.Sprintf(format, a...), errors.Caller(1))
+	return WrapWithCaller(err, fmt.Sprintf(format, a...), Caller(1))
 }
 
-func WrapWithCaller(err error, message string, callerOffset errors.Frame) error {
+func WrapWithCaller(err error, message string, callerOffset Frame) error {
 	return &wrapError{msg: message, err: err, frame: callerOffset}
 }
 

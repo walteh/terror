@@ -17,7 +17,7 @@ func TestIs(t *testing.T) {
 	err1 := terrors.New("1")
 	erra := terrors.Wrap(err1, "wrap 2")
 	errb := terrors.Wrap(erra, "wrap3")
-	erro := terrors.Opaque(err1)
+	erro := errors.Opaque(err1)
 	errco := terrors.Wrap(erro, "opaque")
 	err3 := terrors.New("3")
 
@@ -109,7 +109,7 @@ func TestAs(t *testing.T) {
 		&errP,
 		true,
 	}, {
-		terrors.Opaque(errT),
+		errors.Opaque(errT),
 		&errT,
 		false,
 	}, {
@@ -148,7 +148,7 @@ func TestAs(t *testing.T) {
 	for i, tc := range testCases {
 		name := fmt.Sprintf("%d:As(Errorf(..., %v), %v)", i, tc.err, tc.target)
 		t.Run(name, func(t *testing.T) {
-			match := terrors.As(tc.err, tc.target)
+			match := errors.As(tc.err, tc.target)
 			if match != tc.match {
 				t.Fatalf("errors.As(%T, %T): got %v; want %v", tc.err, tc.target, match, tc.match)
 			}
@@ -176,7 +176,7 @@ func TestAsValidation(t *testing.T) {
 			defer func() {
 				recover()
 			}()
-			if terrors.As(err, tc) {
+			if errors.As(err, tc) {
 				t.Errorf("As(err, %T(%v)) = true, want false", tc, tc)
 				return
 			}
@@ -188,7 +188,7 @@ func TestAsValidation(t *testing.T) {
 func TestUnwrap(t *testing.T) {
 	err1 := terrors.New("1")
 	erra := terrors.Wrap(err1, "wrap 2")
-	erro := terrors.Opaque(err1)
+	erro := errors.Opaque(err1)
 
 	testCases := []struct {
 		err  error
@@ -204,20 +204,20 @@ func TestUnwrap(t *testing.T) {
 		{terrors.Wrap(erro, "opaque"), erro},
 	}
 	for _, tc := range testCases {
-		if got := terrors.Unwrap(tc.err); got != tc.want {
+		if got := errors.Unwrap(tc.err); got != tc.want {
 			t.Errorf("Unwrap(%v) = %v, want %v", tc.err, got, tc.want)
 		}
 	}
 }
 
 func TestOpaque(t *testing.T) {
-	got := fmt.Sprintf("%v", terrors.Wrap(terrors.Opaque(errorT{}), "foo"))
+	got := fmt.Sprintf("%v", terrors.Wrap(errors.Opaque(errorT{}), "foo"))
 	want := "foo: errorT"
 	if got != want {
 		t.Errorf("error without Format: got %v; want %v", got, want)
 	}
 
-	got = fmt.Sprintf("%v", terrors.Wrap(terrors.Opaque(errorD{}), "foo"))
+	got = fmt.Sprintf("%v", terrors.Wrap(errors.Opaque(errorD{}), "foo"))
 	want = "foo: errorD"
 	if got != want {
 		t.Errorf("error with Format: got %v; want %v", got, want)
