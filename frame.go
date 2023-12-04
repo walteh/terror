@@ -46,15 +46,13 @@ func (f Frame) Location() (function, file string, line int) {
 // It should be called from an error's Format implementation
 // after printing any other error detail.
 func (f Frame) Format(p errors.Printer) {
-	// if p.Detail() {
-	_, file, line := f.Location()
-	caller := FormatCaller(file, line)
-	p.Printf("%s\n", caller)
-	// if function != "" {
-	// 	p.Printf("%s\n    ", function)
-	// }
-	// if file != "" {
-	// 	p.Printf("%s:%d\n", file, line)
-	// }
-	// }
+	if p.Detail() {
+		function, file, line := f.Location()
+		if function != "" {
+			p.Printf("%s\n    ", function)
+		}
+		if file != "" {
+			p.Printf("%s:%d\n", file, line)
+		}
+	}
 }

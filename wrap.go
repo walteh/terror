@@ -37,8 +37,8 @@ func (e *wrapError) Error() string {
 func (e *wrapError) Format(s fmt.State, v rune) { errors.FormatError(e, s, v) }
 
 func (e *wrapError) FormatError(p errors.Printer) (next error) {
-	e.frame.Format(p)
 	p.Print(e.msg)
+	e.frame.Format(p)
 	return e.err
 }
 
@@ -56,8 +56,8 @@ func Wrapf(err error, format string, a ...interface{}) error {
 	return WrapWithCaller(err, fmt.Sprintf(format, a...), Caller(1))
 }
 
-func WrapWithCaller(err error, message string, callerOffset Frame) error {
-	return &wrapError{msg: message, err: err, frame: callerOffset}
+func WrapWithCaller(err error, message string, frm Frame) error {
+	return &wrapError{msg: message, err: err, frame: frm}
 }
 
 var _ Framer = &wrapError{}
