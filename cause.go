@@ -3,7 +3,7 @@ package terrors
 type Framer interface {
 	Root() error
 	Frame() Frame
-	Info() []any
+	// Info() []any
 }
 
 // Cause returns first recorded Frame.
@@ -14,7 +14,7 @@ func Cause(err error) (oerr error, f Frame, i []any, r bool) {
 			return err, f, i, r
 		}
 		f = we.Frame()
-		i = we.Info()
+		// i = we.Info()
 		r = r || ok
 		oerr = err
 
@@ -31,6 +31,7 @@ func Cause2(err error) (f Framer, r bool) {
 		if !ok {
 			return
 		}
+
 		r = r || ok
 		f = we
 

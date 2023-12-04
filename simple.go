@@ -1,6 +1,8 @@
 package terrors
 
-import "fmt"
+import (
+	"fmt"
+)
 
 // New returns an error that formats as the given text.
 //

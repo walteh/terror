@@ -29,7 +29,7 @@ func FormatErrorCaller(err error) string {
 		_, filestr, linestr := frm.Frame().Location()
 		caller = FormatCaller(filestr, linestr)
 		caller = caller + " - "
-		str = fmt.Sprintf("%+s -> %+s", frm, frm.Root())
+		str = fmt.Sprintf("%+s", frm)
 	} else {
 		str = fmt.Sprintf("%+s", err)
 	}

@@ -59,5 +59,3 @@ func Wrapf(err error, format string, a ...interface{}) error {
 func WrapWithCaller(err error, message string, frm Frame) error {
 	return &wrapError{msg: message, err: err, frame: frm}
 }
-
-var _ Framer = &wrapError{}
