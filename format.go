@@ -32,7 +32,7 @@ func FormatErrorCaller(err error, verbose bool) string {
 	}
 
 	if verbose {
-		str = fmt.Sprintf("%+v\n", err)
+		str = fmt.Sprintf("%s\n\n%+v\n", err, err)
 		str = strings.Replace(str, "\n", "\n\n", 1)
 	} else {
 		str = fmt.Sprintf("%s", err)

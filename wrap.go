@@ -44,7 +44,7 @@ func (e *wrapError) Info() []any {
 	return []any{e.msg}
 }
 
-func (e *wrapError) Event(ctx context.Context, gv func(*zerolog.Event) *zerolog.Event) *wrapError {
+func (e *wrapError) Event(ctx context.Context, gv func(*zerolog.Event) *zerolog.Event) error {
 	e.event = gv(e.event)
 	return e
 }
@@ -64,10 +64,19 @@ func (e *wrapError) FormatError(p errors.Printer) (next error) {
 	e.frame.Format(p)
 
 	if p.Detail() && (e.event != nil) {
-		l := zerolog.New(&printWriter{p})
 		pkg, fn, file, line := e.frame.Location()
-		l = l.With().Str("pkg", pkg).Str("fn", fn).Str("file", file).Int("line", line).Logger()
-		l.Err(nil).Dict(zerolog_info_key, e.event.Err(e.err).Stack()).Send()
+		if e.err == nil {
+			l := zerolog.New(&printWriter{p})
+
+			l.Err(nil).Dict(zerolog_info_key, e.event.Err(e.err).Stack()).Send()
+		} else {
+			// add to the next errors parent
+			if frm, ok := e.err.(Framer); ok {
+				e.err = frm.Event(nil, func(event *zerolog.Event) *zerolog.Event {
+					return event.Str("pkg", pkg).Str("fn", fn).Str("file", file).Int("line", line)
+				})
+			}
+		}
 		e.event = nil
 	}
 
@@ -109,20 +118,37 @@ func (p *printWriter) Write(b []byte) (int, error) {
 
 		wrt := tabwriter.NewWriter(buf, 0, 0, 1, ' ', 0)
 
-		wrtfunc := func(k string, v interface{}) error {
+		wrtfunc := func(t string, k string, v interface{}) error {
 			if v == nil {
 				return nil
 			}
 			if k == "error" {
 				k = "parent"
 			}
-			_, err := wrt.Write([]byte(fmt.Sprintf("%s\t= %+v\n", k, v)))
+			_, err := wrt.Write([]byte(fmt.Sprintf("%s%s\t= %+v\n", t, k, v)))
 			return err
+		}
+
+		var prntFunc func(string, any) error
+
+		prntFunc = func(t string, datr any) error {
+			if datd, ok := datr.(map[string]interface{}); ok {
+				for k, v := range datd {
+					if k == "error" && v.(map[string]interface{}) != nil {
+						if err = prntFunc(t+"\t", v.(map[string]interface{})); err != nil {
+							return err
+						}
+					} else if err = wrtfunc(t, k, v); err != nil {
+						return err
+					}
+				}
+			}
+			return nil
 		}
 
 		if info, ok := dat[zerolog_info_key].(map[string]interface{}); ok {
 			for k, v := range info {
-				if err = wrtfunc(k, v); err != nil {
+				if err = prntFunc(k, v); err != nil {
 					return 0, err
 				}
 			}

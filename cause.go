@@ -1,11 +1,18 @@
 package terrors
 
-import "errors"
+import (
+	"context"
+	"errors"
+
+	"github.com/rs/zerolog"
+)
 
 type Framer interface {
 	error
 	Root() error
 	Frame() Frame
+
+	Event(ctx context.Context, gv func(*zerolog.Event) *zerolog.Event) error
 	// Event() *zerolog.Event
 	// Info() []any
 }
