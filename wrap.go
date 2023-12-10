@@ -9,6 +9,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"runtime"
 	"text/tabwriter"
 
 	"github.com/go-faster/errors"
@@ -17,7 +18,7 @@ import (
 
 func init() {
 	zerolog.CallerMarshalFunc = func(pc uintptr, file string, line int) string {
-		pkg, _ := GetPackageAndFuncFromPC(pc)
+		pkg, _ := GetPackageAndFuncFromFuncName(runtime.FuncForPC(pc).Name())
 		return FormatCaller(pkg, file, line)
 	}
 }

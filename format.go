@@ -9,19 +9,16 @@ import (
 	"github.com/go-faster/errors"
 )
 
-func FormatCaller(pkg, path string, number int) string {
+func FileNameOfPath(path string) string {
 	tot := strings.Split(path, "/")
 	if len(tot) > 1 {
-		last := tot[len(tot)-1]
-		// secondLast := tot[len(tot)-2]
-		// thirdLast := tot[len(tot)-3]
-
-		path = last
-
-		// return fmt.Sprintf("%s/%s %s:%s", thirdLast, secondLast, color.New(color.Bold).Sprint(last), color.New(color.FgHiRed, color.Bold).Sprintf("%d", number))
+		return tot[len(tot)-1]
 	}
 
-	return fmt.Sprintf("%s %s:%s", pkg, color.New(color.Bold).Sprint(path), color.New(color.FgHiRed, color.Bold).Sprintf("%d", number))
+	return path
+}
+func FormatCaller(pkg, path string, number int) string {
+	return fmt.Sprintf("%s %s:%s", pkg, color.New(color.Bold).Sprint(FileNameOfPath(path)), color.New(color.FgHiRed, color.Bold).Sprintf("%d", number))
 }
 
 func FormatErrorCaller(err error, verbose bool) string {

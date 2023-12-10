@@ -42,8 +42,8 @@ func (f Frame) Location() (pkg, function, file string, line int) {
 	}
 	// get the name of the package
 
-	pkg, _ = GetPackageAndFuncFromPC(fr.PC)
-	return pkg, fr.Function, fr.File, fr.Line
+	pkg, function = GetPackageAndFuncFromFuncName(fr.Function)
+	return pkg, function, FileNameOfPath(fr.File), fr.Line
 }
 
 // Format prints the stack as error detail.
@@ -61,8 +61,9 @@ func (f Frame) Format(p errors.Printer) {
 	}
 }
 
-func GetPackageAndFuncFromPC(pc uintptr) (pkg, function string) {
-	funcName := runtime.FuncForPC(pc).Name()
+func GetPackageAndFuncFromFuncName(pc string) (pkg, function string) {
+	// funcName := runtime.FuncForPC(pc).Name()
+	funcName := pc
 	lastSlash := strings.LastIndexByte(funcName, '/')
 	if lastSlash < 0 {
 		lastSlash = 0
@@ -73,11 +74,9 @@ func GetPackageAndFuncFromPC(pc uintptr) (pkg, function string) {
 	fname := funcName[lastDot+1:]
 
 	if strings.Contains(pkg, ".(") {
-
 		splt := strings.Split(pkg, ".(")
 		pkg = splt[0]
 		fname = "(" + splt[1] + "." + fname
-
 	}
 
 	return pkg, fname
