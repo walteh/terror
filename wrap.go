@@ -65,6 +65,8 @@ func (e *wrapError) FormatError(p errors.Printer) (next error) {
 
 	if p.Detail() && (e.event != nil) {
 		l := zerolog.New(&printWriter{p})
+		pkg, fn, file, line := e.frame.Location()
+		l = l.With().Str("pkg", pkg).Str("fn", fn).Str("file", file).Int("line", line).Logger()
 		l.Err(nil).Dict(zerolog_info_key, e.event.Err(e.err).Stack()).Send()
 		e.event = nil
 	}
@@ -87,7 +89,7 @@ func Wrapf(err error, format string, a ...interface{}) *wrapError {
 }
 
 func WrapWithCaller(err error, message string, frm int) *wrapError {
-	return &wrapError{msg: message, err: err, frame: Caller(frm + 1), event: zerolog.Dict().Caller(frm + 1)}
+	return &wrapError{msg: message, err: err, frame: Caller(frm + 1), event: zerolog.Dict()}
 }
 
 type printWriter struct {

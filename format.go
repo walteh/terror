@@ -24,7 +24,7 @@ func FormatCaller(pkg, path string, number int) string {
 func FormatErrorCaller(err error, verbose bool) string {
 	caller := ""
 	var str string
-	if frm, ok := Cause2(err); ok {
+	if frm, ok := FirstCause(err); ok {
 		pkg, _, filestr, linestr := frm.Frame().Location()
 		caller = FormatCaller(pkg, filestr, linestr)
 		caller = caller + " - "
