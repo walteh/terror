@@ -24,17 +24,20 @@ func FormatCaller(pkg, path string, number int) string {
 	return fmt.Sprintf("%s %s:%s", pkg, color.New(color.Bold).Sprint(path), color.New(color.FgHiRed, color.Bold).Sprintf("%d", number))
 }
 
-func FormatErrorCaller(err error) string {
+func FormatErrorCaller(err error, verbose bool) string {
 	caller := ""
 	var str string
-	// the way go-faster/errors works is that you need to wrap to get the frame, so we do that here in case it has not been wrapped
 	if frm, ok := Cause2(err); ok {
 		pkg, _, filestr, linestr := frm.Frame().Location()
 		caller = FormatCaller(pkg, filestr, linestr)
 		caller = caller + " - "
-		str = fmt.Sprintf("%+s", frm)
+		err = frm
+	}
+
+	if verbose {
+		str = fmt.Sprintf("%+v", err)
 	} else {
-		str = fmt.Sprintf("%+s", err)
+		str = fmt.Sprintf("%s", err)
 	}
 
 	prev := ""

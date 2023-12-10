@@ -1,6 +1,7 @@
 package terrors
 
 type Framer interface {
+	error
 	Root() error
 	Frame() Frame
 	// Event() *zerolog.Event
