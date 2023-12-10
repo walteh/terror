@@ -5,15 +5,28 @@ package terrors
 // license that can be found in the LICENSE file.
 
 import (
+	"bytes"
+	"context"
+	"encoding/json"
 	"fmt"
+	"text/tabwriter"
 
 	"github.com/go-faster/errors"
+	"github.com/rs/zerolog"
 )
+
+func init() {
+	zerolog.CallerMarshalFunc = func(pc uintptr, file string, line int) string {
+		pkg, _ := GetPackageAndFuncFromPC(pc)
+		return FormatCaller(pkg, file, line)
+	}
+}
 
 type wrapError struct {
 	msg   string
 	err   error
 	frame Frame
+	event *zerolog.Event
 }
 
 var _ Framer = (*wrapError)(nil)
@@ -30,15 +43,31 @@ func (e *wrapError) Info() []any {
 	return []any{e.msg}
 }
 
+func (e *wrapError) Event(ctx context.Context, gv func(*zerolog.Event) *zerolog.Event) *wrapError {
+	e.event = gv(e.event)
+	return e
+}
+
 func (e *wrapError) Error() string {
 	return fmt.Sprint(e)
 }
 
 func (e *wrapError) Format(s fmt.State, v rune) { errors.FormatError(e, s, v) }
 
+const (
+	zerolog_info_key = "____info____"
+)
+
 func (e *wrapError) FormatError(p errors.Printer) (next error) {
 	p.Print(e.msg)
 	e.frame.Format(p)
+
+	if p.Detail() && (e.event != nil) {
+		l := zerolog.New(&printWriter{p})
+		l.Err(nil).Dict(zerolog_info_key, e.event.Err(e.err).Stack()).Send()
+		e.event = nil
+	}
+
 	return e.err
 }
 
@@ -47,15 +76,61 @@ func (e *wrapError) Unwrap() error {
 }
 
 // Wrap error with message and caller.
-func Wrap(err error, message string) error {
-	return WrapWithCaller(err, message, Caller(1))
+func Wrap(err error, message string) *wrapError {
+	return WrapWithCaller(err, message, 1)
 }
 
 // Wrapf wraps error with formatted message and caller.
-func Wrapf(err error, format string, a ...interface{}) error {
-	return WrapWithCaller(err, fmt.Sprintf(format, a...), Caller(1))
+func Wrapf(err error, format string, a ...interface{}) *wrapError {
+	return WrapWithCaller(err, fmt.Sprintf(format, a...), 1)
 }
 
-func WrapWithCaller(err error, message string, frm Frame) error {
-	return &wrapError{msg: message, err: err, frame: frm}
+func WrapWithCaller(err error, message string, frm int) *wrapError {
+	return &wrapError{msg: message, err: err, frame: Caller(frm + 1), event: zerolog.Dict().Caller(frm + 1)}
+}
+
+type printWriter struct {
+	errors.Printer
+}
+
+func (p *printWriter) Write(b []byte) (int, error) {
+	dat := map[string]interface{}{}
+
+	err := json.Unmarshal(b, &dat)
+	if err != nil {
+		return 0, err
+	}
+
+	if _, ok := dat[zerolog_info_key]; ok {
+		buf := bytes.NewBuffer(nil)
+
+		wrt := tabwriter.NewWriter(buf, 0, 0, 1, ' ', 0)
+
+		wrtfunc := func(k string, v interface{}) error {
+			if v == nil {
+				return nil
+			}
+			if k == "error" {
+				k = "parent"
+			}
+			_, err := wrt.Write([]byte(fmt.Sprintf("%s\t= %+v\n", k, v)))
+			return err
+		}
+
+		if info, ok := dat[zerolog_info_key].(map[string]interface{}); ok {
+			for k, v := range info {
+				if err = wrtfunc(k, v); err != nil {
+					return 0, err
+				}
+			}
+		}
+
+		err := wrt.Flush()
+		if err != nil {
+			return 0, err
+		}
+		p.Printf("\n%s\n", buf.String())
+	}
+
+	return len(b), nil
 }

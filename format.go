@@ -9,16 +9,19 @@ import (
 	"github.com/go-faster/errors"
 )
 
-func FormatCaller(path string, number int) string {
+func FormatCaller(pkg, path string, number int) string {
 	tot := strings.Split(path, "/")
-	if len(tot) > 2 {
+	if len(tot) > 1 {
 		last := tot[len(tot)-1]
-		secondLast := tot[len(tot)-2]
-		thirdLast := tot[len(tot)-3]
-		return fmt.Sprintf("%s/%s %s:%s", thirdLast, secondLast, color.New(color.Bold).Sprint(last), color.New(color.FgHiRed, color.Bold).Sprintf("%d", number))
-	} else {
-		return fmt.Sprintf("%s:%d", path, number)
+		// secondLast := tot[len(tot)-2]
+		// thirdLast := tot[len(tot)-3]
+
+		path = last
+
+		// return fmt.Sprintf("%s/%s %s:%s", thirdLast, secondLast, color.New(color.Bold).Sprint(last), color.New(color.FgHiRed, color.Bold).Sprintf("%d", number))
 	}
+
+	return fmt.Sprintf("%s %s:%s", pkg, color.New(color.Bold).Sprint(path), color.New(color.FgHiRed, color.Bold).Sprintf("%d", number))
 }
 
 func FormatErrorCaller(err error) string {
@@ -26,8 +29,8 @@ func FormatErrorCaller(err error) string {
 	var str string
 	// the way go-faster/errors works is that you need to wrap to get the frame, so we do that here in case it has not been wrapped
 	if frm, ok := Cause2(err); ok {
-		_, filestr, linestr := frm.Frame().Location()
-		caller = FormatCaller(filestr, linestr)
+		pkg, _, filestr, linestr := frm.Frame().Location()
+		caller = FormatCaller(pkg, filestr, linestr)
 		caller = caller + " - "
 		str = fmt.Sprintf("%+s", frm)
 	} else {
@@ -49,7 +52,7 @@ func FormatErrorCallerGoFaster(err error) string {
 	// the way go-faster/errors works is that you need to wrap to get the frame, so we do that here in case it has not been wrapped
 	if frm, ok := errors.Cause(errors.Wrap(err, "tmp")); ok {
 		_, filestr, linestr := frm.Location()
-		caller = FormatCaller(filestr, linestr)
+		caller = FormatCaller("", filestr, linestr)
 		caller = caller + " - "
 	}
 	str := fmt.Sprintf("%+s", err)

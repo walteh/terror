@@ -6,6 +6,7 @@ package terrors
 
 import (
 	"runtime"
+	"strings"
 
 	"github.com/go-faster/errors"
 )
@@ -30,16 +31,19 @@ func Caller(skip int) Frame {
 // Location reports the file, line, and function of a frame.
 //
 // The returned function may be "" even if file and line are not.
-func (f Frame) Location() (function, file string, line int) {
+func (f Frame) Location() (pkg, function, file string, line int) {
 	frames := runtime.CallersFrames(f.frames[:])
 	if _, ok := frames.Next(); !ok {
-		return "", "", 0
+		return "", "", "", 0
 	}
 	fr, ok := frames.Next()
 	if !ok {
-		return "", "", 0
+		return "", "", "", 0
 	}
-	return fr.Function, fr.File, fr.Line
+	// get the name of the package
+
+	pkg, _ = GetPackageAndFuncFromPC(fr.PC)
+	return pkg, fr.Function, fr.File, fr.Line
 }
 
 // Format prints the stack as error detail.
@@ -47,12 +51,34 @@ func (f Frame) Location() (function, file string, line int) {
 // after printing any other error detail.
 func (f Frame) Format(p errors.Printer) {
 	if p.Detail() {
-		function, file, line := f.Location()
+		pkg, function, file, line := f.Location()
 		if function != "" {
 			p.Printf("%s\n    ", function)
 		}
 		if file != "" {
-			p.Printf("%s:%d\n", file, line)
+			p.Printf("%s %s:%d\n", pkg, file, line)
 		}
 	}
+}
+
+func GetPackageAndFuncFromPC(pc uintptr) (pkg, function string) {
+	funcName := runtime.FuncForPC(pc).Name()
+	lastSlash := strings.LastIndexByte(funcName, '/')
+	if lastSlash < 0 {
+		lastSlash = 0
+	}
+	lastDot := strings.LastIndexByte(funcName[lastSlash:], '.') + lastSlash
+
+	pkg = funcName[:lastDot]
+	fname := funcName[lastDot+1:]
+
+	if strings.Contains(pkg, ".(") {
+
+		splt := strings.Split(pkg, ".(")
+		pkg = splt[0]
+		fname = "(" + splt[1] + "." + fname
+
+	}
+
+	return pkg, fname
 }

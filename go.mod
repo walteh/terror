@@ -5,6 +5,7 @@ go 1.21.4
 require (
 	github.com/fatih/color v1.16.0
 	github.com/go-faster/errors v0.7.0
+	github.com/rs/zerolog v1.31.0
 	github.com/stretchr/testify v1.8.4
 )
 

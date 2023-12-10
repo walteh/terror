@@ -5,18 +5,26 @@ package terrors_test
 // license that can be found in the LICENSE file.
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"testing"
 
 	"github.com/go-faster/errors"
+	"github.com/rs/zerolog"
 	"github.com/walteh/terrors"
 )
 
 func TestIs(t *testing.T) {
+	ctx := context.Background()
+
+	ctx = zerolog.New(zerolog.NewConsoleWriter()).With().Timestamp().Logger().WithContext(ctx)
+
 	err1 := terrors.New("1")
 	erra := terrors.Wrap(err1, "wrap 2")
-	errb := terrors.Wrap(erra, "wrap3")
+	errb := terrors.Wrap(erra, "wrap3").Event(ctx, func(e *zerolog.Event) *zerolog.Event {
+		return e.Str("key", "value").Caller(1)
+	})
 	erro := errors.Opaque(err1)
 	errco := terrors.Wrap(erro, "opaque")
 	err3 := terrors.New("3")
@@ -59,7 +67,10 @@ func TestIs(t *testing.T) {
 		t.Run("", func(t *testing.T) {
 			if got := errors.Is(tc.err, tc.target); got != tc.match {
 				t.Errorf("Is(%v, %v) = %v, want %v", tc.err, tc.target, got, tc.match)
+			} else {
+				fmt.Printf("%+v\n", tc.err)
 			}
+
 		})
 	}
 }

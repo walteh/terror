@@ -3,27 +3,28 @@ package terrors
 type Framer interface {
 	Root() error
 	Frame() Frame
+	// Event() *zerolog.Event
 	// Info() []any
 }
 
 // Cause returns first recorded Frame.
-func Cause(err error) (oerr error, f Frame, i []any, r bool) {
-	for {
-		we, ok := err.(Framer)
-		if !ok {
-			return err, f, i, r
-		}
-		f = we.Frame()
-		// i = we.Info()
-		r = r || ok
-		oerr = err
+// func Cause(err error) (oerr error, f Frame, i []any, r bool) {
+// 	for {
+// 		we, ok := err.(Framer)
+// 		if !ok {
+// 			return err, f, i, r
+// 		}
+// 		f = we.Frame()
+// 		// i = we.Info()
+// 		r = r || ok
+// 		oerr = err
 
-		err = we.Root()
-		if err == nil {
-			return oerr, f, i, r
-		}
-	}
-}
+// 		err = we.Root()
+// 		if err == nil {
+// 			return oerr, f, i, r
+// 		}
+// 	}
+// }
 
 func Cause2(err error) (f Framer, r bool) {
 	for {
@@ -38,6 +39,24 @@ func Cause2(err error) (f Framer, r bool) {
 		err = we.Root()
 		if err == nil {
 			return
+		}
+	}
+}
+
+func Cause3(err error) ([]Framer, bool) {
+	var frames []Framer
+
+	for {
+		we, ok := err.(Framer)
+		if !ok {
+			return frames, ok
+		}
+
+		frames = append(frames, we)
+
+		err = we.Root()
+		if err == nil {
+			return frames, ok
 		}
 	}
 }
