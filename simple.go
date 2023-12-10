@@ -8,7 +8,7 @@ import (
 //
 // The returned error contains a Frame set to the caller's location and
 // implements Formatter to show this information when printed with details.
-func New(text string) error {
+func New(text string) *wrapError {
 	return WrapWithCaller(nil, text, 1)
 }
 
@@ -17,6 +17,6 @@ func New(text string) error {
 //
 // The returned error contains a Frame set to the caller's location and
 // implements Formatter to show this information when printed with details.
-func Errorf(format string, a ...any) error {
+func Errorf(format string, a ...any) *wrapError {
 	return WrapWithCaller(nil, fmt.Sprintf(format, a...), 1)
 }
