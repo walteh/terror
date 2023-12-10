@@ -1,5 +1,7 @@
 package terrors
 
+import "errors"
+
 type Framer interface {
 	error
 	Root() error
@@ -44,7 +46,7 @@ func Cause2(err error) (f Framer, r bool) {
 	}
 }
 
-func Cause3(err error) ([]Framer, bool) {
+func ListCause(err error) ([]Framer, bool) {
 	var frames []Framer
 
 	for {
@@ -58,6 +60,20 @@ func Cause3(err error) ([]Framer, bool) {
 		err = we.Root()
 		if err == nil {
 			return frames, ok
+		}
+	}
+}
+
+func FirstCause(err error) (Framer, bool) {
+	for {
+		if err == nil {
+			return nil, false
+		}
+		frm, ok := err.(Framer)
+		if !ok {
+			err = errors.Unwrap(err)
+		} else {
+			return frm, true
 		}
 	}
 }
