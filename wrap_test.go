@@ -21,7 +21,9 @@ func TestIs(t *testing.T) {
 	ctx = zerolog.New(zerolog.NewConsoleWriter()).With().Timestamp().Logger().WithContext(ctx)
 
 	err1 := terrors.New("1")
-	erra := terrors.Wrap(err1, "wrap 2")
+	erra := terrors.Wrap(err1, "wrap 2").Event(ctx, func(e *zerolog.Event) *zerolog.Event {
+		return e.Str("keyabc", "valueabc").Caller(1)
+	})
 	errb := terrors.Wrap(erra, "wrap3").Event(ctx, func(e *zerolog.Event) *zerolog.Event {
 		return e.Str("key", "value").Caller(1)
 	})
@@ -223,13 +225,13 @@ func TestUnwrap(t *testing.T) {
 
 func TestOpaque(t *testing.T) {
 	got := fmt.Sprintf("%v", terrors.Wrap(errors.Opaque(errorT{}), "foo"))
-	want := "foo: errorT"
+	want := "ERROR[foo]: errorT"
 	if got != want {
 		t.Errorf("error without Format: got %v; want %v", got, want)
 	}
 
 	got = fmt.Sprintf("%v", terrors.Wrap(errors.Opaque(errorD{}), "foo"))
-	want = "foo: errorD"
+	want = "ERROR[foo]: errorD"
 	if got != want {
 		t.Errorf("error with Format: got %v; want %v", got, want)
 	}

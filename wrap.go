@@ -30,7 +30,7 @@ type wrapError struct {
 	event *zerolog.Event
 }
 
-var _ Framer = (*wrapError)(nil)
+// var _ Framer = (*wrapError)(nil)
 
 func (e *wrapError) Root() error {
 	return e.err
@@ -60,24 +60,17 @@ const (
 )
 
 func (e *wrapError) FormatError(p errors.Printer) (next error) {
-	p.Print(e.msg)
-	e.frame.Format(p)
+	p.Print("ERROR[" + e.msg + "]")
+
+	defer func() {
+		e.event = nil
+	}()
 
 	if p.Detail() && (e.event != nil) {
 		pkg, fn, file, line := e.frame.Location()
-		if e.err == nil {
-			l := zerolog.New(&printWriter{p})
-
-			l.Err(nil).Dict(zerolog_info_key, e.event.Err(e.err).Stack()).Send()
-		} else {
-			// add to the next errors parent
-			if frm, ok := e.err.(Framer); ok {
-				e.err = frm.Event(nil, func(event *zerolog.Event) *zerolog.Event {
-					return event.Str("pkg", pkg).Str("fn", fn).Str("file", file).Int("line", line)
-				})
-			}
-		}
-		e.event = nil
+		l := zerolog.New(&printWriter{p})
+		ev := e.event.Err(e.err).Str("caller", FormatCaller(pkg, file, line)).Str("function", fn).Stack()
+		l.Err(nil).Dict(zerolog_info_key, ev).Send()
 	}
 
 	return e.err
@@ -129,26 +122,9 @@ func (p *printWriter) Write(b []byte) (int, error) {
 			return err
 		}
 
-		var prntFunc func(string, any) error
-
-		prntFunc = func(t string, datr any) error {
-			if datd, ok := datr.(map[string]interface{}); ok {
-				for k, v := range datd {
-					if k == "error" && v.(map[string]interface{}) != nil {
-						if err = prntFunc(t+"\t", v.(map[string]interface{})); err != nil {
-							return err
-						}
-					} else if err = wrtfunc(t, k, v); err != nil {
-						return err
-					}
-				}
-			}
-			return nil
-		}
-
 		if info, ok := dat[zerolog_info_key].(map[string]interface{}); ok {
 			for k, v := range info {
-				if err = prntFunc(k, v); err != nil {
+				if err = wrtfunc("", k, v); err != nil {
 					return 0, err
 				}
 			}

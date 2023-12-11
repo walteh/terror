@@ -52,12 +52,12 @@ func (f Frame) Location() (pkg, function, file string, line int) {
 func (f Frame) Format(p errors.Printer) {
 	if p.Detail() {
 		pkg, function, file, line := f.Location()
-		if function != "" {
-			p.Printf("%s\n    ", function)
-		}
-		if file != "" {
-			p.Printf("%s %s:%d\n", pkg, file, line)
-		}
+		// if function != "" {
+		// 	p.Printf("%s\n    ", function)
+		// }
+		// if file != "" {
+		p.Printf("%s %s:%d %s\n", pkg, file, line, function)
+		// }
 	}
 }
 
