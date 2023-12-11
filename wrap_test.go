@@ -21,10 +21,10 @@ func TestIs(t *testing.T) {
 	ctx = zerolog.New(zerolog.NewConsoleWriter()).With().Timestamp().Logger().WithContext(ctx)
 
 	err1 := terrors.New("1")
-	erra := terrors.Wrap(err1, "wrap 2").Event(ctx, func(e *zerolog.Event) *zerolog.Event {
+	erra := terrors.Wrap(err1, "wrap 2").Event(func(e *zerolog.Event) *zerolog.Event {
 		return e.Str("keyabc", "valueabc").Caller(1)
 	})
-	errb := terrors.Wrap(erra, "wrap3").Event(ctx, func(e *zerolog.Event) *zerolog.Event {
+	errb := terrors.Wrap(erra, "wrap3").Event(func(e *zerolog.Event) *zerolog.Event {
 		return e.Str("key", "value").Caller(1)
 	})
 	erro := errors.Opaque(err1)
@@ -70,7 +70,13 @@ func TestIs(t *testing.T) {
 			if got := errors.Is(tc.err, tc.target); got != tc.match {
 				t.Errorf("Is(%v, %v) = %v, want %v", tc.err, tc.target, got, tc.match)
 			} else {
-				fmt.Printf("%+v\n", tc.err)
+				cause, ok := terrors.Cause2(tc.err)
+				if !ok {
+					// the test case was not designted to be printed
+
+				} else {
+					fmt.Printf("%+v\n", cause)
+				}
 			}
 
 		})

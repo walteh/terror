@@ -37,6 +37,11 @@ func Cause2(err error) (f Framer, r bool) {
 	for {
 		we, ok := err.(Framer)
 		if !ok {
+			// frm2, ok2 := err.(interface{ Frame() Frame })
+			// if ok2 {
+			// 	we = &wrapError{err: err, frame: frm2.Frame(), msg: err.Error()}
+			// 	ok = true
+			// }
 			return
 		}
 

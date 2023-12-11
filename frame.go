@@ -7,8 +7,6 @@ package terrors
 import (
 	"runtime"
 	"strings"
-
-	"github.com/go-faster/errors"
 )
 
 // A Frame contains part of a call stack.
@@ -49,7 +47,7 @@ func (f Frame) Location() (pkg, function, file string, line int) {
 // Format prints the stack as error detail.
 // It should be called from an error's Format implementation
 // after printing any other error detail.
-func (f Frame) Format(p errors.Printer) {
+func (f Frame) Format(p Printer) {
 	if p.Detail() {
 		pkg, function, file, line := f.Location()
 		// if function != "" {
