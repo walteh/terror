@@ -117,7 +117,7 @@ type printWriter struct {
 }
 
 func (p *printWriter) Write(b []byte) (int, error) {
-	dat := map[string]interface{}{}
+	dat := map[string]any{}
 
 	err := json.Unmarshal(b, &dat)
 	if err != nil {
@@ -128,12 +128,15 @@ func (p *printWriter) Write(b []byte) (int, error) {
 
 	wrt := tabwriter.NewWriter(buf, 0, 0, 1, ' ', 0)
 
-	wrtfunc := func(t string, k string, v interface{}) error {
+	wrtfunc := func(t string, k string, v any) error {
 		if v == nil {
 			return nil
 		}
 		if k == "error" {
 			k = "chain"
+		}
+		if v == "" || v == nil {
+			return nil
 		}
 		_, err := wrt.Write([]byte(fmt.Sprintf("%s%s\t= %+v\n", t, k, v)))
 		return err
@@ -170,7 +173,7 @@ type checker struct {
 
 func (c *wrapError) MarshalZerologObject(e *zerolog.Event) (err error) {
 	for _, ev := range c.event {
-		ev(e)
+		*e = *ev(e)
 	}
 	return nil
 }
