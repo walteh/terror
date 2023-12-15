@@ -50,28 +50,40 @@ func FormatCaller(pkg, path string, number int) string {
 	return fmt.Sprintf("%s %s:%s", pkg, color.New(color.Bold).Sprint(FileNameOfPath(path)), color.New(color.FgHiRed, color.Bold).Sprintf("%d", number))
 }
 
+func ExtractErrorDetail(err error) string {
+	if frm, ok := Cause2(err); ok {
+		return frm.Detail()
+	}
+
+	return ""
+}
+
 func FormatErrorCaller(err error, verbose bool) string {
 	caller := ""
+	dets := ""
 	var str string
 	if frm, ok := Cause2(err); ok {
 		pkg, _, filestr, linestr := frm.Frame().Location()
 		caller = FormatCaller(pkg, filestr, linestr)
 		caller = caller + " - "
 		err = frm
+		if verbose {
+			dets = frm.Detail()
+		}
 	}
 
-	if verbose {
-		str = fmt.Sprintf("%s\n\n%+v\n", err, err)
+	if verbose && dets != "" {
+		str = fmt.Sprintf("%s\n\n%s\n", err.Error(), dets)
 	} else {
-		str = fmt.Sprintf("%s", err)
+		str = fmt.Sprintf("%s", err.Error())
 	}
 
 	prev := ""
 	// replace any string that contains "*.Err" with a bold red version using regex
-	str = regexp.MustCompile(`\S+\.Err\S*`).ReplaceAllStringFunc(str, func(s string) string {
-		prev += color.New(color.FgRed, color.Bold).Sprint(s) + " -> "
-		return ""
-	})
+	// str = regexp.MustCompile(`\S+\.Err\S*`).ReplaceAllStringFunc(str, func(s string) string {
+	// 	prev += color.New(color.FgRed, color.Bold).Sprint(s) + " -> "
+	// 	return ""
+	// })
 
 	return fmt.Sprintf("%s%s%s", caller, prev, color.New(color.FgRed).Sprint(str))
 }

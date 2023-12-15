@@ -41,6 +41,7 @@ func (f Frame) Location() (pkg, function, file string, line int) {
 	// get the name of the package
 
 	pkg, function = GetPackageAndFuncFromFuncName(fr.Function)
+
 	return pkg, function, FileNameOfPath(fr.File), fr.Line
 }
 
@@ -76,6 +77,8 @@ func GetPackageAndFuncFromFuncName(pc string) (pkg, function string) {
 		pkg = splt[0]
 		fname = "(" + splt[1] + "." + fname
 	}
+
+	pkg = strings.TrimPrefix(pkg, "github.com/")
 
 	return pkg, fname
 }
