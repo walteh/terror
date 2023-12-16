@@ -31,7 +31,7 @@ func TestFormatJsonForDetail(t *testing.T) {
 			input:    []byte(`{"error": "something went wrong", "code": 500}`),
 			ignored:  []string{},
 			priority: []string{},
-			want:     "code  = \"500\"\nerror = \"something went wrong\"\n",
+			want:     "code  = 500\nerror = something went wrong",
 			wantErr:  false,
 		},
 
@@ -40,7 +40,7 @@ func TestFormatJsonForDetail(t *testing.T) {
 			input:    []byte(`{"error": "something went wrong", "code": 500, "ignored": "ignore me"}`),
 			ignored:  []string{"ignored"},
 			priority: []string{},
-			want:     "code  = \"500\"\nerror = \"something went wrong\"\n",
+			want:     "code  = 500\nerror = something went wrong",
 			wantErr:  false,
 		},
 		{
@@ -48,7 +48,7 @@ func TestFormatJsonForDetail(t *testing.T) {
 			input:    []byte(`{"error": "something went wrong", "code": 500, "priority": "important"}`),
 			ignored:  []string{},
 			priority: []string{"priority"},
-			want:     "priority = \"important\"\ncode     = \"500\"\nerror    = \"something went wrong\"\n",
+			want:     "priority = important\ncode     = 500\nerror    = something went wrong",
 			wantErr:  false,
 		},
 		{

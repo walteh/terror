@@ -231,13 +231,13 @@ func TestUnwrap(t *testing.T) {
 
 func TestOpaque(t *testing.T) {
 	got := fmt.Sprintf("%v", terrors.Wrap(errors.Opaque(errorT{}), "foo"))
-	want := "ERROR[foo, walteh/terrors_test, wrap_test.go:233] ⏩❌ errorT"
+	want := "ERROR[msg=foo][pkg=walteh/terrors_test][loc=wrap_test.go:233] ⏩❌ errorT"
 	if got != want {
 		t.Errorf("error without Format: got %v; want %v", got, want)
 	}
 
 	got = fmt.Sprintf("%v", terrors.Wrap(errors.Opaque(errorD{}), "foo"))
-	want = "ERROR[foo, walteh/terrors_test, wrap_test.go:239] ⏩❌ errorD"
+	want = "ERROR[msg=foo][pkg=walteh/terrors_test][loc=wrap_test.go:239] ⏩❌ errorD"
 	if got != want {
 		t.Errorf("error with Format: got %q; want %q", got, want)
 	}

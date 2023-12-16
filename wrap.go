@@ -47,10 +47,9 @@ func (e *wrapError) Event(gv func(*zerolog.Event) *zerolog.Event) error {
 }
 
 func (e *wrapError) Error() string {
-	pkg, _, filestr, linestr := e.Frame().Location()
 
 	if e.err == nil {
-		return fmt.Sprintf("ERROR[%s, %s, %s:%d]", e.msg, pkg, filestr, linestr)
+		return e.Self()
 	}
 
 	errd := e.err.Error()
@@ -61,7 +60,16 @@ func (e *wrapError) Error() string {
 		arrow += "❌"
 	}
 
-	return fmt.Sprintf("ERROR[%s, %s, %s:%d] %s %s", e.msg, pkg, filestr, linestr, arrow, errd)
+	return fmt.Sprintf("%s %s %s", e.Self(), arrow, errd)
+}
+
+func (e *wrapError) Message() string {
+	return e.msg
+}
+
+func (e *wrapError) Self() string {
+	pkg, _, filestr, linestr := e.Frame().Location()
+	return fmt.Sprintf("ERROR[msg=%s][pkg=%s][loc=%s]", e.msg, pkg, fmt.Sprintf("%s:%d", filestr, linestr))
 }
 
 func (e *wrapError) Unwrap() error {
