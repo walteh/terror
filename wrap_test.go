@@ -75,8 +75,6 @@ func TestIs(t *testing.T) {
 					// the test case was not designted to be printed
 
 				} else {
-					// fmt.Println(terrors.ExtractErrorDetail(cause))
-
 					fmt.Println(terrors.FormatErrorCaller(cause, "cause", false))
 				}
 			}
