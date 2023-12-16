@@ -37,13 +37,13 @@ func (e *wrapError) Event(gv func(*zerolog.Event) *zerolog.Event) error {
 	return e
 }
 
-func (e *wrapError) Error() string {
+func ChainFormatter(self func() string, kid error) string {
 
-	if e.err == nil {
-		return e.Self()
+	if kid == nil {
+		return self()
 	}
 
-	errd := e.err.Error()
+	errd := kid.Error()
 
 	arrow := "⏩"
 
@@ -51,16 +51,23 @@ func (e *wrapError) Error() string {
 		arrow += "❌"
 	}
 
-	return fmt.Sprintf("%s %s %s", e.Self(), arrow, errd)
+	return fmt.Sprintf("%s %s %s", self(), arrow, errd)
+}
+
+func (e *wrapError) Error() string {
+	return ChainFormatter(e.Self, e.err)
+}
+
+func (e *wrapError) Simple() string {
+	return ChainFormatter(e.Message, e.err)
 }
 
 func (e *wrapError) Message() string {
-	return e.msg
+	return fmt.Sprintf("ERROR%s", ColorBrackets("msg", e.msg))
 }
 
 func (e *wrapError) Self() string {
-	pkg, _, filestr, linestr := e.Frame().Location()
-	return fmt.Sprintf("ERROR[msg=%s][pkg=%s][loc=%s]", e.msg, pkg, fmt.Sprintf("%s:%d", filestr, linestr))
+	return fmt.Sprintf("%s%s", e.Message(), FormatCallerFromFrame(e.Frame()))
 }
 
 func (e *wrapError) Unwrap() error {

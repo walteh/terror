@@ -2,11 +2,9 @@ package terrors
 
 import (
 	"fmt"
-	"regexp"
 	"strings"
 
 	"github.com/fatih/color"
-	"github.com/go-faster/errors"
 )
 
 func FileNameOfPath(path string) string {
@@ -17,8 +15,21 @@ func FileNameOfPath(path string) string {
 
 	return path
 }
+
+func FormatCallerFromFrame(frm Frame) string {
+	pkg, _, filestr, linestr := frm.Location()
+	return FormatCaller(pkg, filestr, linestr)
+}
 func FormatCaller(pkg, path string, number int) string {
-	return fmt.Sprintf("%s %s:%s", pkg, color.New(color.Bold).Sprint(FileNameOfPath(path)), color.New(color.FgHiRed, color.Bold).Sprintf("%d", number))
+	pkgd := ColorBrackets("pkg", color.New(color.FgHiGreen).Sprint(pkg))
+	pathd := ColorBrackets("file", fmt.Sprintf("%s:%s", color.New(color.Bold).Sprint(FileNameOfPath(path)), color.New(color.FgHiRed, color.Bold).Sprintf("%d", number)))
+	return fmt.Sprintf("%s%s", pkgd, pathd)
+}
+
+func ColorBrackets(label string, value string) string {
+	closeBracket := color.New(color.Faint, color.FgHiCyan).Sprint("]")
+	openBracket := color.New(color.Faint, color.FgHiCyan).Sprint("[")
+	return fmt.Sprintf("%s%s=%s%s", openBracket, color.New(color.Faint, color.BgHiMagenta).Sprint(label), value, closeBracket)
 }
 
 func ExtractErrorDetail(err error) string {
@@ -26,54 +37,35 @@ func ExtractErrorDetail(err error) string {
 		return frm.Detail()
 	}
 
-	return ""
+	return "no error detail found"
 }
 
-func FormatErrorCaller(err error, verbose bool) string {
-	caller := ""
+func FormatErrorCaller(err error, name string, verbose bool) string {
+	// caller := ""
 	dets := ""
-	var str string
+	var errstr string
 	if frm, ok := Cause2(err); ok {
-		pkg, _, filestr, linestr := frm.Frame().Location()
-		caller = FormatCaller(pkg, filestr, linestr)
-		caller = caller + " - "
-		err = frm
 		if verbose {
+			errstr = frm.Simple()
 			dets = frm.Detail()
+		} else {
+			errstr = frm.Error()
 		}
-	}
-
-	if verbose && dets != "" {
-		str = fmt.Sprintf("%s\n\n%s\n", err.Error(), dets)
 	} else {
-		str = fmt.Sprintf("%s", err.Error())
+		errstr = err.Error()
 	}
 
-	prev := ""
-	// replace any string that contains "*.Err" with a bold red version using regex
-	// str = regexp.MustCompile(`\S+\.Err\S*`).ReplaceAllStringFunc(str, func(s string) string {
-	// 	prev += color.New(color.FgRed, color.Bold).Sprint(s) + " -> "
-	// 	return ""
-	// })
-
-	return fmt.Sprintf("%s%s%s", caller, prev, color.New(color.FgRed).Sprint(str))
-}
-
-func FormatErrorCallerGoFaster(err error) string {
-	caller := ""
-	// the way go-faster/errors works is that you need to wrap to get the frame, so we do that here in case it has not been wrapped
-	if frm, ok := errors.Cause(errors.Wrap(err, "tmp")); ok {
-		_, filestr, linestr := frm.Location()
-		caller = FormatCaller("", filestr, linestr)
-		caller = caller + " - "
+	if verbose {
+		if dets != "" {
+			dets = fmt.Sprintf("\n\n%s\n", dets)
+		}
+	} else {
+		dets = ""
 	}
-	str := fmt.Sprintf("%+s", err)
-	prev := ""
-	// replace any string that contains "*.Err" with a bold red version using regex
-	str = regexp.MustCompile(`\S+\.Err\S*`).ReplaceAllStringFunc(str, func(s string) string {
-		prev += color.New(color.FgRed, color.Bold).Sprint(s) + " -> "
-		return ""
-	})
 
-	return fmt.Sprintf("%s%s%s", caller, prev, color.New(color.FgRed).Sprint(str))
+	if name != "" {
+		name = "[" + name + "] - "
+	}
+
+	return fmt.Sprintf("%s%s%s", name, color.New(color.FgRed).Sprint(errstr), dets)
 }

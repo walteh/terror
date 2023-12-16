@@ -9,6 +9,7 @@ type Framer interface {
 	Root() error
 	Frame() Frame
 	Detail() string
+	Simple() string
 }
 
 func Cause2(err error) (f Framer, r bool) {
