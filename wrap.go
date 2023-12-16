@@ -5,20 +5,11 @@ package terrors
 // license that can be found in the LICENSE file.
 
 import (
-	"context"
 	"fmt"
-	"runtime"
 	"strings"
 
 	"github.com/rs/zerolog"
 )
-
-func init() {
-	zerolog.CallerMarshalFunc = func(pc uintptr, file string, line int) string {
-		pkg, _ := GetPackageAndFuncFromFuncName(runtime.FuncForPC(pc).Name())
-		return FormatCaller(pkg, file, line)
-	}
-}
 
 type wrapError struct {
 	msg   string
@@ -89,16 +80,7 @@ func Wrapf(err error, format string, a ...interface{}) *wrapError {
 func WrapWithCaller(err error, message string, frm int) *wrapError {
 	frme := Caller(frm + 1)
 
-	return &wrapError{msg: message, err: err, frame: frme, event: []func(e *zerolog.Event) *zerolog.Event{
-		func(e *zerolog.Event) *zerolog.Event {
-			pkg, fn, file, line := frme.Location()
-			e = e.Str("caller", FormatCaller(pkg, file, line)).Str("function", fn).Ctx(context.TODO())
-			if err != nil {
-				e = e.Err(err)
-			}
-			return e
-		},
-	}}
+	return &wrapError{msg: message, err: err, frame: frme, event: []func(*zerolog.Event) *zerolog.Event{}}
 }
 
 func (c *wrapError) MarshalZerologObject(e *zerolog.Event) (err error) {

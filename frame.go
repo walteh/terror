@@ -45,21 +45,6 @@ func (f Frame) Location() (pkg, function, file string, line int) {
 	return pkg, function, FileNameOfPath(fr.File), fr.Line
 }
 
-// Format prints the stack as error detail.
-// It should be called from an error's Format implementation
-// after printing any other error detail.
-func (f Frame) Format(p Printer) {
-	if p.Detail() {
-		pkg, function, file, line := f.Location()
-		// if function != "" {
-		// 	p.Printf("%s\n    ", function)
-		// }
-		// if file != "" {
-		p.Printf("%s %s:%d %s\n", pkg, file, line, function)
-		// }
-	}
-}
-
 func GetPackageAndFuncFromFuncName(pc string) (pkg, function string) {
 	// funcName := runtime.FuncForPC(pc).Name()
 	funcName := pc
