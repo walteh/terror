@@ -40,15 +40,19 @@ func (e *wrapError) Event(gv func(*zerolog.Event) *zerolog.Event) error {
 func ChainFormatter(self func() string, kid error) string {
 
 	if kid == nil {
-		return self()
+		slf := self()
+		if !strings.Contains(slf, "❌") {
+			return "❌ " + slf
+		}
+		return slf
 	}
 
 	errd := kid.Error()
 
 	arrow := "⏩"
 
-	if !strings.Contains(errd, arrow) {
-		arrow += "❌"
+	if !strings.Contains(errd, arrow) && !strings.HasPrefix(errd, "❌") {
+		arrow += " ❌"
 	}
 
 	return fmt.Sprintf("%s %s %s", self(), arrow, errd)
