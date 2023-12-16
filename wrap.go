@@ -16,6 +16,7 @@ type wrapError struct {
 	err   error
 	frame Frame
 	event []func(*zerolog.Event) *zerolog.Event
+	code  int
 }
 
 func (e *wrapError) Root() error {
@@ -62,11 +63,23 @@ func (e *wrapError) Error() string {
 	return ChainFormatter(e.Self, e.err)
 }
 
+func (e *wrapError) Code() int {
+	return e.code
+}
+
+func (e *wrapError) WithCode(code int) *wrapError {
+	e.code = code
+	return e
+}
+
 func (e *wrapError) Simple() string {
 	return ChainFormatter(e.Message, e.err)
 }
 
 func (e *wrapError) Message() string {
+	if e.code != 0 {
+		return fmt.Sprintf("ERROR%s%s", ColorCode(e.code), ColorBrackets("msg", e.msg))
+	}
 	return fmt.Sprintf("ERROR%s", ColorBrackets("msg", e.msg))
 }
 
