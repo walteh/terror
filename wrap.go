@@ -6,17 +6,17 @@ package terrors
 
 import (
 	"fmt"
+	"strings"
 
-	"github.com/go-faster/errors"
+	"github.com/rs/zerolog"
 )
 
 type wrapError struct {
 	msg   string
 	err   error
 	frame Frame
+	event []func(*zerolog.Event) *zerolog.Event
 }
-
-var _ Framer = (*wrapError)(nil)
 
 func (e *wrapError) Root() error {
 	return e.err
@@ -30,16 +30,44 @@ func (e *wrapError) Info() []any {
 	return []any{e.msg}
 }
 
-func (e *wrapError) Error() string {
-	return fmt.Sprint(e)
+func (e *wrapError) Event(gv func(*zerolog.Event) *zerolog.Event) error {
+	if gv != nil {
+		e.event = append(e.event, gv)
+	}
+	return e
 }
 
-func (e *wrapError) Format(s fmt.State, v rune) { errors.FormatError(e, s, v) }
+func ChainFormatter(self func() string, kid error) string {
 
-func (e *wrapError) FormatError(p errors.Printer) (next error) {
-	p.Print(e.msg)
-	e.frame.Format(p)
-	return e.err
+	if kid == nil {
+		return self()
+	}
+
+	errd := kid.Error()
+
+	arrow := "⏩"
+
+	if !strings.Contains(errd, arrow) {
+		arrow += "❌"
+	}
+
+	return fmt.Sprintf("%s %s %s", self(), arrow, errd)
+}
+
+func (e *wrapError) Error() string {
+	return ChainFormatter(e.Self, e.err)
+}
+
+func (e *wrapError) Simple() string {
+	return ChainFormatter(e.Message, e.err)
+}
+
+func (e *wrapError) Message() string {
+	return fmt.Sprintf("ERROR%s", ColorBrackets("msg", e.msg))
+}
+
+func (e *wrapError) Self() string {
+	return fmt.Sprintf("%s%s", e.Message(), FormatCallerFromFrame(e.Frame()))
 }
 
 func (e *wrapError) Unwrap() error {
@@ -47,15 +75,24 @@ func (e *wrapError) Unwrap() error {
 }
 
 // Wrap error with message and caller.
-func Wrap(err error, message string) error {
-	return WrapWithCaller(err, message, Caller(1))
+func Wrap(err error, message string) *wrapError {
+	return WrapWithCaller(err, message, 1)
 }
 
 // Wrapf wraps error with formatted message and caller.
-func Wrapf(err error, format string, a ...interface{}) error {
-	return WrapWithCaller(err, fmt.Sprintf(format, a...), Caller(1))
+func Wrapf(err error, format string, a ...interface{}) *wrapError {
+	return WrapWithCaller(err, fmt.Sprintf(format, a...), 1)
 }
 
-func WrapWithCaller(err error, message string, frm Frame) error {
-	return &wrapError{msg: message, err: err, frame: frm}
+func WrapWithCaller(err error, message string, frm int) *wrapError {
+	frme := Caller(frm + 1)
+
+	return &wrapError{msg: message, err: err, frame: frme, event: []func(*zerolog.Event) *zerolog.Event{}}
+}
+
+func (c *wrapError) MarshalZerologObject(e *zerolog.Event) (err error) {
+	for _, ev := range c.event {
+		*e = *ev(e)
+	}
+	return nil
 }
