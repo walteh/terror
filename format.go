@@ -29,13 +29,13 @@ func FormatCaller(pkg, path string, number int) string {
 func ColorBrackets(label string, value string) string {
 	closeBracket := color.New(color.Faint, color.FgHiCyan).Sprint("]")
 	openBracket := color.New(color.Faint, color.FgHiCyan).Sprint("[")
-	return fmt.Sprintf("%s%s=%s%s", openBracket, color.New(color.Faint, color.BgHiMagenta).Sprint(label), value, closeBracket)
+	return fmt.Sprintf("%s%s%s%s%s", openBracket, color.New(color.Faint, color.FgHiMagenta).Sprint(label), color.New(color.Faint, color.FgBlack).Sprint("="), value, closeBracket)
 }
 
 func ColorCode(code int) string {
 	openBracket := color.New(color.Faint, color.FgHiRed).Sprint("{")
 	closeBracket := color.New(color.Faint, color.FgHiRed).Sprint("}")
-	return fmt.Sprintf("%s%s=%s%s", openBracket, color.New(color.Faint, color.FgHiBlack).Sprint("code"), color.New(color.FgHiRed, color.Bold).Sprint(code), closeBracket)
+	return fmt.Sprintf("%s%s%s%s%s", openBracket, color.New(color.Faint, color.FgHiBlack).Sprint("code"), color.New(color.Faint, color.FgBlack).Sprint("="), color.New(color.FgHiRed, color.Bold).Sprint(code), closeBracket)
 }
 
 func ExtractErrorDetail(err error) string {
