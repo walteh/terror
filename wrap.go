@@ -42,6 +42,10 @@ func (e *wrapError) WithRecovery(r string, state ...any) *wrapError {
 	return e
 }
 
+func (me *wrapError) WithRecoveryf(format string, a ...any) *wrapError {
+	return me.WithRecovery(fmt.Sprintf(format, a...))
+}
+
 func (e *wrapError) Info() []any {
 	return []any{e.msg}
 }
