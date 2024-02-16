@@ -12,11 +12,17 @@ import (
 )
 
 type wrapError struct {
-	msg   string
-	err   error
-	frame Frame
-	event []func(*zerolog.Event) *zerolog.Event
-	code  int
+	msg      string
+	err      error
+	frame    Frame
+	event    []func(*zerolog.Event) *zerolog.Event
+	code     int
+	recovery *Recovery
+}
+
+type Recovery struct {
+	Suggestion string
+	State      []any
 }
 
 func (e *wrapError) Root() error {
@@ -25,6 +31,15 @@ func (e *wrapError) Root() error {
 
 func (e *wrapError) Frame() Frame {
 	return e.frame
+}
+
+func (e *wrapError) Recovery() *Recovery {
+	return e.recovery
+}
+
+func (e *wrapError) WithRecovery(r string, state ...any) *wrapError {
+	e.recovery = &Recovery{r, state}
+	return e
 }
 
 func (e *wrapError) Info() []any {

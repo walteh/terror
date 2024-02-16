@@ -9,3 +9,17 @@ func Into[T error](err error) (val T, ok bool) {
 	ok = errors.As(err, &val)
 	return val, ok
 }
+
+func IsRecoverable(err error) (bool, *Recovery) {
+	// look for any recoverable error in the chain
+	chain := GetChain(err)
+	for _, e := range chain {
+		if werr, ok := e.(*wrapError); ok {
+			if werr.recovery != nil {
+				return true, werr.recovery
+			}
+		}
+	}
+
+	return false, nil
+}
