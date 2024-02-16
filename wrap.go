@@ -113,7 +113,7 @@ func FullChainFormatter(kid error) string {
 		wrk += arrow + " "
 		switch v := err.(type) {
 		case *wrapError:
-			wrk += v.DetailedSelfOnlyMessage()
+			wrk += v.DetailedSelf()
 		default:
 			wrk += fmt.Sprintf("%s\n\n", v.Error())
 		}
@@ -158,18 +158,6 @@ func (e *wrapError) Self() string {
 }
 
 func (e *wrapError) DetailedSelf() string {
-	self := e.Self()
-
-	dets := e.Detail()
-
-	if dets != "" {
-		self += fmt.Sprintf("\n\n%s\n\n", dets)
-	}
-
-	return self
-}
-
-func (e *wrapError) DetailedSelfOnlyMessage() string {
 	self := e.Self()
 
 	dets := e.Detail()
