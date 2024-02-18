@@ -13,7 +13,12 @@ func Into[T error](err error) (val T, ok bool) {
 	return val, ok
 }
 
-func IsRecoverable(err error) (bool, *Recovery) {
+type RecoveryInfo struct {
+	DeepestSimpleErrorMessage string
+	Suggestion                string
+}
+
+func IsRecoverable(err error) (bool, *RecoveryInfo) {
 	chain := GetChain(err)
 
 	// we want to get the deepest recoverable error in the chain
@@ -22,7 +27,14 @@ func IsRecoverable(err error) (bool, *Recovery) {
 	for _, e := range chain {
 		if werr, ok := e.(*wrapError); ok {
 			if werr.recovery != nil {
-				return true, werr.recovery
+				msg := werr.msg
+				if werr.err != nil {
+					msg += ": " + werr.err.Error()
+				}
+				return true, &RecoveryInfo{
+					DeepestSimpleErrorMessage: msg,
+					Suggestion:                werr.recovery.Suggestion,
+				}
 			}
 		}
 	}
